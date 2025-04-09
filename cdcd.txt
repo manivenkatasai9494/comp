@@ -586,3 +586,562 @@ int main() {
     return 0;
 }
 
+
+
+
+
+
+=========================
+
+
+1.	Write a python program to import and export data using Pandas Library Functions
+import pandas as pd
+
+# Step 1: Import data from a CSV file
+# (You can replace 'input.csv' with your actual file name)
+try:
+    df = pd.read_csv('input.csv')
+    print("Data imported successfully!\n")
+    print("Preview of imported data:")
+    print(df.head())  # Display the first 5 rows
+except FileNotFoundError:
+    print("The file 'input.csv' was not found. Please check the path.")
+
+# Step 2: Perform a basic operation (e.g., add a new column)
+if 'df' in locals():
+    df['Total'] = df.select_dtypes(include='number').sum(axis=1)
+
+    # Step 3: Export the modified data to a new CSV file
+    df.to_csv('output.csv', index=False)
+    print("\nModified data exported successfully to 'output.csv'")
+-----------------------------------------------------------------------------------------------------------------------
+
+2.	Apply suitable classifier model to classify the credit status to be good or bad on German credit dataset.csv, create confusion matrix to measure the accuracy of the model (using Logistic Regression/SVM/Naïve Bayes).
+
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import LabelEncoder
+from sklearn.metrics import confusion_matrix, accuracy_score
+
+# Load the dataset
+df = pd.read_csv("German credit dataset.csv")
+
+# Encode target labels: 'good' -> 1, 'bad' -> 0
+df['Creditability'] = LabelEncoder().fit_transform(df['Creditability'])
+
+# Convert all object (text) columns to numbers
+for col in df.select_dtypes(include='object').columns:
+    df[col] = LabelEncoder().fit_transform(df[col])
+
+# Split features and target
+X = df.drop('Creditability', axis=1)
+y = df['Creditability']
+
+# Train-test split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1)
+
+# Train the model
+model = LogisticRegression()
+model.fit(X_train, y_train)
+
+# Make predictions
+y_pred = model.predict(X_test)
+
+# Confusion matrix and accuracy
+cm = confusion_matrix(y_test, y_pred)
+acc = accuracy_score(y_test, y_pred)
+-----------------------------------------------------------------------------------------------------------------------
+3. Demonstrate the following data pre-processing techniques on the given dataset 
+a. Standardization b. normalization c. summarization d. de-duplication e. imputation 
+
+import pandas as pd
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from sklearn.impute import SimpleImputer
+
+# Step 1: Load your dataset
+df = pd.read_csv("German credit dataset.csv")
+
+print("\nOriginal Data (first 5 rows):")
+print(df.head())
+
+# Step 2: Standardization (mean = 0, std = 1)
+scaler = StandardScaler()
+# We'll apply it to numeric columns only
+numeric_cols = df.select_dtypes(include=['int64', 'float64']).columns
+df_standardized = df.copy()
+df_standardized[numeric_cols] = scaler.fit_transform(df[numeric_cols])
+print("\nAfter Standardization (first 5 rows):")
+print(df_standardized[numeric_cols].head())
+
+# Step 3: Normalization (scales values between 0 and 1)
+normalizer = MinMaxScaler()
+df_normalized = df.copy()
+df_normalized[numeric_cols] = normalizer.fit_transform(df[numeric_cols])
+print("\nAfter Normalization (first 5 rows):")
+print(df_normalized[numeric_cols].head())
+
+# Step 4: Summarization (mean, median, std, etc.)
+print("\nSummary Statistics:")
+print(df.describe())
+
+# Step 5: De-duplication
+print("\nShape before de-duplication:", df.shape)
+df_no_duplicates = df.drop_duplicates()
+print("Shape after de-duplication:", df_no_duplicates.shape)
+
+# Step 6: Imputation (fill missing values with mean for numeric columns)
+# First, let's introduce some missing values for demonstration
+import numpy as np
+df_missing = df.copy()
+df_missing.loc[0:2, numeric_cols[0]] = np.nan  # introducing NaNs in the first column
+
+print(f"\nBefore Imputation (missing values in '{numeric_cols[0]}'):")
+print(df_missing[[numeric_cols[0]]].head())
+
+# Apply imputation
+imputer = SimpleImputer(strategy='mean')
+df_missing[numeric_cols] = imputer.fit_transform(df_missing[numeric_cols])
+
+print("\nAfter Imputation:")
+print(df_missing[[numeric_cols[0]]].head())
+-----------------------------------------------------------------------------------------------------------------------
+4.Demonstrate the capability of PCA and LDA in dimensionality reduction.
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.datasets import load_iris
+from sklearn.decomposition import PCA
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
+
+# Load the Iris dataset
+iris = load_iris()
+X = iris.data      # Features
+y = iris.target    # Labels
+target_names = iris.target_names
+
+# ----- PCA -----
+pca = PCA(n_components=2)  # Reduce to 2 components
+X_pca = pca.fit_transform(X)
+
+# Plot PCA result
+plt.figure(figsize=(8, 4))
+plt.subplot(1, 2, 1)
+for i, target in enumerate(np.unique(y)):
+    plt.scatter(X_pca[y == target, 0], X_pca[y == target, 1], label=target_names[i])
+plt.title('PCA: Dimension Reduction')
+plt.xlabel('PC 1')
+plt.ylabel('PC 2')
+plt.legend()
+
+# ----- LDA -----
+lda = LDA(n_components=2)
+X_lda = lda.fit_transform(X, y)
+
+# Plot LDA result
+plt.subplot(1, 2, 2)
+for i, target in enumerate(np.unique(y)):
+    plt.scatter(X_lda[y == target, 0], X_lda[y == target, 1], label=target_names[i])
+plt.title('LDA: Dimension Reduction')
+plt.xlabel('LD 1')
+plt.ylabel('LD 2')
+plt.legend()
+
+plt.tight_layout()
+plt.show()
+
+-----------------------------------------------------------------------------------------------------------------------
+5. Implement Find-S algorithm and Candidate elimination algorithm. 
+
+def find_s_algorithm(examples):
+    # Start with the first positive example
+    for i in range(len(examples)):
+        if examples[i][-1] == 'Yes':
+            hypothesis = examples[i][:-1]
+            break
+
+    # Generalize hypothesis for other positive examples
+    for i in range(len(examples)):
+        if examples[i][-1] == 'Yes':
+            for j in range(len(hypothesis)):
+                if examples[i][j] != hypothesis[j]:
+                    hypothesis[j] = '?'
+    return hypothesis
+
+# Sample training data
+data = [
+    ['Sunny', 'Warm', 'Normal', 'Strong', 'Warm', 'Same', 'Yes'],
+    ['Sunny', 'Warm', 'High', 'Strong', 'Warm', 'Same', 'Yes'],
+    ['Rainy', 'Cold', 'High', 'Strong', 'Warm', 'Change', 'No'],
+    ['Sunny', 'Warm', 'High', 'Strong', 'Cool', 'Change', 'Yes']
+]
+
+hypothesis = find_s_algorithm(data)
+print("Final Hypothesis using Find-S:", hypothesis)
+
+
+def candidate_elimination(examples):
+    domains = [list(set([x[i] for x in examples])) for i in range(len(examples[0])-1)]
+    S = examples[0][:-1] if examples[0][-1] == 'Yes' else ['∅'] * (len(examples[0]) - 1)
+    G = [['?' for _ in range(len(S))]]
+
+    for i in range(1, len(examples)):
+        x = examples[i][:-1]
+        label = examples[i][-1]
+
+        if label == 'Yes':
+            for j in range(len(S)):
+                if S[j] != x[j]:
+                    S[j] = '?'
+            G = [g for g in G if all(s == '?' or g[k] == '?' or s == g[k] for k, s in enumerate(S))]
+        else:  # label == 'No'
+            new_G = []
+            for g in G:
+                for j in range(len(g)):
+                    if g[j] == '?':
+                        for value in domains[j]:
+                            if value != x[j]:
+                                new_hypo = g[:]
+                                new_hypo[j] = value
+                                if all(S[k] == '?' or new_hypo[k] == '?' or new_hypo[k] == S[k] for k in range(len(S))):
+                                    new_G.append(new_hypo)
+            G = new_G
+    return S, G
+
+S_final, G_final = candidate_elimination(data)
+print("Final Specific Hypothesis (S):", S_final)
+print("Final General Hypotheses (G):", G_final)
+
+-----------------------------------------------------------------------------------------------------------------------
+6.Apply train set split and develop a regression model to predict the sold price of players using imb381ipl2013.csv build a correlation matrix between all the numeric features in dataset and visualize the heatmap. RMSE of train and test data. 
+
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error
+
+# Load dataset
+df = pd.read_csv('imb381ipl2013.csv')
+
+# Clean and select numeric columns only
+numeric_df = df.select_dtypes(include=[np.number]).dropna()
+
+# Show correlation matrix
+corr_matrix = numeric_df.corr()
+
+# 🔥 Heatmap
+plt.figure(figsize=(10, 6))
+sns.heatmap(corr_matrix, annot=True, cmap='coolwarm')
+plt.title('Correlation Matrix Heatmap')
+plt.show()
+
+# Predict 'sold_price' using other numeric features
+X = numeric_df.drop('sold_price', axis=1)
+y = numeric_df['sold_price']
+
+# 🧪 Train-Test Split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# ✅ Train the model
+model = LinearRegression()
+model.fit(X_train, y_train)
+
+# Predict
+y_train_pred = model.predict(X_train)
+y_test_pred = model.predict(X_test)
+
+# 🎯 RMSE Calculation
+train_rmse = np.sqrt(mean_squared_error(y_train, y_train_pred))
+test_rmse = np.sqrt(mean_squared_error(y_test, y_test_pred))
+
+print("Train RMSE:", round(train_rmse, 2))
+print("Test RMSE:", round(test_rmse, 2))
+-----------------------------------------------------------------------------------------------------------------------
+7. Demonstrate regression technique to predict the responses at unknown locations by fitting the linear and polynomial regression surfaces. Extract error measures and plot the residuals. Further, add a regulizer and demonstrate the reduction in the variance. (Ridge and LASSO) 
+
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression, Ridge, Lasso
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.metrics import mean_squared_error
+
+# 1. Simulate a nonlinear dataset
+np.random.seed(1)
+X = np.sort(5 * np.random.rand(100, 1), axis=0)
+y = 2 * X**2 + 3 * X + 5 + np.random.randn(100, 1) * 4  # true equation + noise
+
+# 2. Split data
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# 3. Linear Regression
+lin_model = LinearRegression()
+lin_model.fit(X_train, y_train)
+y_pred_lin = lin_model.predict(X_test)
+
+# 4. Polynomial Regression (degree 2)
+poly = PolynomialFeatures(degree=2)
+X_poly_train = poly.fit_transform(X_train)
+X_poly_test = poly.transform(X_test)
+
+poly_model = LinearRegression()
+poly_model.fit(X_poly_train, y_train)
+y_pred_poly = poly_model.predict(X_poly_test)
+
+# 5. Ridge Regression
+ridge_model = Ridge(alpha=1.0)
+ridge_model.fit(X_poly_train, y_train)
+y_pred_ridge = ridge_model.predict(X_poly_test)
+
+# 6. LASSO Regression
+lasso_model = Lasso(alpha=0.1)
+lasso_model.fit(X_poly_train, y_train)
+y_pred_lasso = lasso_model.predict(X_poly_test)
+
+# 7. Error Measures (RMSE)
+rmse_lin = np.sqrt(mean_squared_error(y_test, y_pred_lin))
+rmse_poly = np.sqrt(mean_squared_error(y_test, y_pred_poly))
+rmse_ridge = np.sqrt(mean_squared_error(y_test, y_pred_ridge))
+rmse_lasso = np.sqrt(mean_squared_error(y_test, y_pred_lasso))
+
+print(f"Linear RMSE: {rmse_lin:.2f}")
+print(f"Polynomial RMSE: {rmse_poly:.2f}")
+print(f"Ridge RMSE: {rmse_ridge:.2f}")
+print(f"LASSO RMSE: {rmse_lasso:.2f}")
+
+# 8. Residual Plots
+plt.figure(figsize=(10, 6))
+plt.subplot(2, 2, 1)
+plt.scatter(y_test, y_test - y_pred_lin, color='blue')
+plt.title('Residuals: Linear')
+
+plt.subplot(2, 2, 2)
+plt.scatter(y_test, y_test - y_pred_poly, color='green')
+plt.title('Residuals: Polynomial')
+
+plt.subplot(2, 2, 3)
+plt.scatter(y_test, y_test - y_pred_ridge, color='red')
+plt.title('Residuals: Ridge')
+
+plt.subplot(2, 2, 4)
+plt.scatter(y_test, y_test - y_pred_lasso, color='purple')
+plt.title('Residuals: LASSO')
+
+plt.tight_layout()
+plt.show()
+-----------------------------------------------------------------------------------------------------------------------
+8.Implement the K-Means clustering algorithm using Python. You may use a library such as scikit-learn for this purpose.
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.datasets import load_iris
+from sklearn.cluster import KMeans
+
+# Load the Iris dataset
+iris = load_iris()
+X = iris.data
+y = iris.target  # Actual species labels (not used by K-Means)
+
+# We'll use only the first two features for visualization
+X_2D = X[:, :2]  # sepal length and sepal width
+
+# Apply K-Means clustering
+kmeans = KMeans(n_clusters=3, random_state=42)
+kmeans.fit(X_2D)
+cluster_labels = kmeans.labels_
+
+# Create DataFrame for plotting
+df = pd.DataFrame(X_2D, columns=['SepalLength', 'SepalWidth'])
+df['Cluster'] = cluster_labels
+
+# Plotting the clusters
+plt.figure(figsize=(8, 6))
+sns.scatterplot(data=df, x='SepalLength', y='SepalWidth', hue='Cluster', palette='viridis', s=100)
+plt.title("K-Means Clustering (using Sepal Length & Width)")
+plt.xlabel("Sepal Length (cm)")
+plt.ylabel("Sepal Width (cm)")
+plt.legend(title='Cluster')
+plt.grid(True)
+plt.show()
+-----------------------------------------------------------------------------------------------------------------------
+
+9. Implement K-NN Algo
+# 1. Import necessary libraries
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import accuracy_score, confusion_matrix
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# 2. Load the iris dataset
+iris = load_iris()
+X = iris.data   # Features
+y = iris.target # Labels
+
+# 3. Split into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# 4. Train the K-NN classifier
+k = 3
+knn = KNeighborsClassifier(n_neighbors=k)
+knn.fit(X_train, y_train)
+
+# 5. Make predictions
+y_pred = knn.predict(X_test)
+
+# 6. Accuracy
+acc = accuracy_score(y_test, y_pred)
+print(f"Accuracy with k={k}: {acc:.2f}")
+
+# 7. Confusion Matrix
+cm = confusion_matrix(y_test, y_pred)
+
+# 8. Plot Confusion Matrix
+plt.figure(figsize=(6, 4))
+sns.heatmap(cm, annot=True, cmap='Blues', fmt='d',
+            xticklabels=iris.target_names, yticklabels=iris.target_names)
+plt.title("Confusion Matrix")
+plt.xlabel("Predicted Label")
+plt.ylabel("True Label")
+plt.show()
+-----------------------------------------------------------------------------------------------------------------------
+
+10. Implement the Agglomerative Hierarchical clustering algorithm using Python. Utilize linkage methods such as ‘ward’, ‘complete’, or ‘average’.
+
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.datasets import make_blobs
+from sklearn.cluster import AgglomerativeClustering
+from scipy.cluster.hierarchy import dendrogram, linkage
+
+# 1. Generate sample data
+X, _ = make_blobs(n_samples=200, centers=4, cluster_std=1.0, random_state=42)
+
+# 2. Create linkage matrix (for dendrogram)
+linkage_matrix = linkage(X, method='ward')
+
+# 3. Plot dendrogram
+plt.figure(figsize=(10, 5))
+dendrogram(linkage_matrix)
+plt.title("Dendrogram (Ward Linkage)")
+plt.xlabel("Sample Index")
+plt.ylabel("Distance")
+plt.show()
+
+# 4. Agglomerative Clustering with Ward linkage
+model = AgglomerativeClustering(n_clusters=4, linkage='ward')
+labels = model.fit_predict(X)
+
+# 5. Plot clustered data
+plt.figure(figsize=(6, 4))
+plt.scatter(X[:, 0], X[:, 1], c=labels, cmap='rainbow')
+plt.title("Agglomerative Clustering (Ward Linkage)")
+plt.xlabel("Feature 1")
+plt.ylabel("Feature 2")
+plt.grid(True)
+plt.show()
+-----------------------------------------------------------------------------------------------------------------------
+
+11. Spam Detection: Given email in an inbox, identify those email messages that are spam and those that are not. Having a model of this problem would allow a program to leave non-spam emails in the inbox and move spam emails to a spam folder. (logistic regression) 
+
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# 1. Load dataset
+# You can replace this with your own CSV with 'label' and 'message' columns
+df = pd.read_csv("https://raw.githubusercontent.com/justmarkham/pycon-2016-tutorial/master/data/sms.tsv", sep='\t', names=["label", "message"])
+
+# 2. Convert labels to binary
+df['label'] = df['label'].map({'ham': 0, 'spam': 1})
+
+# 3. Vectorize the text
+vectorizer = CountVectorizer()
+X = vectorizer.fit_transform(df['message'])
+y = df['label']
+
+# 4. Train/test split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# 5. Train Logistic Regression model
+model = LogisticRegression()
+model.fit(X_train, y_train)
+
+# 6. Make predictions
+y_pred = model.predict(X_test)
+
+# 7. Evaluate performance
+acc = accuracy_score(y_test, y_pred)
+print(f"Accuracy: {acc:.2f}")
+
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred, target_names=["Not Spam", "Spam"]))
+
+# 8. Confusion matrix
+cm = confusion_matrix(y_test, y_pred)
+
+# 9. Plot confusion matrix
+plt.figure(figsize=(6, 4))
+sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=["Not Spam", "Spam"], yticklabels=["Not Spam", "Spam"])
+plt.xlabel("Predicted")
+plt.ylabel("Actual")
+plt.title("Confusion Matrix")
+plt.show()
+
+-----------------------------------------------------------------------------------------------------------------------
+
+12. For the glass identification dataset, fit random forest classifier to classify glass type.
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+
+# 1. Load the glass dataset
+url = "https://archive.ics.uci.edu/ml/machine-learning-databases/glass/glass.data"
+cols = ['Id', 'RI', 'Na', 'Mg', 'Al', 'Si', 'K', 'Ca', 'Ba', 'Fe', 'Type']
+df = pd.read_csv(url, names=cols, index_col=False
+
+# 2. Drop ID column
+df.drop('Id', axis=1, inplace=True)
+
+# 3. Features and target
+X = df.drop('Type', axis=1)
+y = df['Type']
+
+# 4. Train-test split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# 5. Random Forest model
+rf = RandomForestClassifier(n_estimators=100, random_state=42)
+rf.fit(X_train, y_train)
+
+# 6. Prediction
+y_pred = rf.predict(X_test)
+
+# 7. Evaluation
+print("Accuracy:", accuracy_score(y_test, y_pred))
+print("\nClassification Report:\n", classification_report(y_test, y_pred))
+
+# 8. Confusion Matrix
+cm = confusion_matrix(y_test, y_pred)
+plt.figure(figsize=(8, 5))
+sns.heatmap(cm, annot=True, fmt='d', cmap='viridis')
+plt.title("Confusion Matrix - Glass Type")
+plt.xlabel("Predicted")
+plt.ylabel("Actual")
+plt.show()
+
