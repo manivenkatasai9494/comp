@@ -1145,3 +1145,825 @@ plt.xlabel("Predicted")
 plt.ylabel("Actual")
 plt.show()
 
+
+
+
+
++++++++++++++++++++++++dhruv
+
+1. Implementation of FSM
+#include <stdio.h>
+
+int main() {
+    char input[100];
+    int state = 0;  // Start at q0
+
+    printf("Enter a binary string: ");
+    scanf("%s", input);
+
+    for (int i = 0; input[i] != '\0'; i++) {
+        char ch = input[i];
+
+        if (ch != '0' && ch != '1') {
+            printf("Invalid input! Only 0 and 1 allowed.\n");
+            return 1;
+        }
+
+        // Transition logic
+        if (state == 0) {
+            if (ch == '0') state = 1;
+            else state = 0;
+        }
+        else if (state == 1) {
+            if (ch == '0') state = 1;
+            else state = 2;
+        }
+        else if (state == 2) {
+            if (ch == '0') state = 1;
+            else state = 0;
+        }
+    }
+
+    if (state == 2)
+        printf(" Accepted: Ends with 01\n");
+    else
+        printf(" Rejected\n");
+
+    return 0;
+}
+
+
+2. Design and Implementation of Tables used in a Translator
+Opt 1:
+#include <stdio.h>
+#include <string.h>
+
+int isValidString(char *str) {
+    int count_a = 0, count_b = 0;
+    int state = 0; // q0
+
+    printf("\nTransition Table\n");
+    printf("Current State | Input | Next State\n");
+    printf("-------------------------------\n");
+
+    for (int i = 0; str[i] != '\0'; i++) {
+        char ch = str[i];
+
+        printf("q%d            |  %c    | ", state, ch);
+
+        if (state == 0) {
+            if (ch == 'a') {
+                count_a++;
+                printf("q0\n");
+            } else if (ch == 'b') {
+                state = 1;
+                count_b++;
+                printf("q1\n");
+            } else {
+                printf("Reject (Invalid character)\n");
+                return 0;
+            }
+        } else if (state == 1) {
+            if (ch == 'b') {
+                count_b++;
+                printf("q1\n");
+            } else if (ch == 'a') {
+                printf("Reject (a after b)\n");
+                return 0;
+            } else {
+                printf("Reject (Invalid character)\n");
+                return 0;
+            }
+        }
+    }
+
+    // Final validation
+    if (state == 1 && count_a == count_b && count_a > 0) {
+        printf("\nThe string is valid (a^n b^n)\n");
+        return 1;
+    } else {
+        printf("\nThe string is invalid (a^n b^n)\n");
+        return 0;
+    }
+}
+
+int main() {
+    char input[100];
+    printf("Enter the string: ");
+    scanf("%99s", input); // Prevent buffer overflow
+    isValidString(input);
+    return 0;
+}
+
+3.Write a Program to implement NFAs that recognize identifiers, constants and operators
+#include <stdio.h>
+#include <ctype.h>
+#include <string.h>
+
+// NFA for identifier: starts with letter or _, followed by letters, digits or _
+int isIdentifier(char *str) {
+    if (!isalpha(str[0]) && str[0] != '_')
+        return 0;
+    for (int i = 1; str[i] != '\0'; i++) {
+        if (!isalnum(str[i]) && str[i] != '_')
+            return 0;
+    }
+    return 1;
+}
+
+// NFA for constant: integer or float (simple version)
+int isConstant(char *str) {
+    int i = 0, dot = 0;
+    if (str[i] == '-') i++; // support negative numbers
+    for (; str[i] != '\0'; i++) {
+        if (str[i] == '.') {
+            if (dot) return 0; // only one dot allowed
+            dot = 1;
+        } else if (!isdigit(str[i])) {
+            return 0;
+        }
+    }
+    return (i > 0);
+}
+
+// NFA for operator: supports +, -, *, /, =, ==, !=, <, <=, >, >=
+int isOperator(char *str) {
+    if (strcmp(str, "+") == 0 || strcmp(str, "-") == 0 ||
+        strcmp(str, "*") == 0 || strcmp(str, "/") == 0 ||
+        strcmp(str, "=") == 0 || strcmp(str, "==") == 0 ||
+        strcmp(str, "!=") == 0 || strcmp(str, "<") == 0 ||
+        strcmp(str, "<=") == 0 || strcmp(str, ">") == 0 ||
+        strcmp(str, ">=") == 0)
+        return 1;
+    return 0;
+}
+
+int main() {
+    char token[50];
+
+    printf("Enter tokens (type 'exit' to stop):\n");
+
+    while (1) {
+        printf("> ");
+        scanf("%s", token);
+        if (strcmp(token, "exit") == 0)
+            break;
+
+        if (isIdentifier(token))
+            printf(" Identifier: %s\n", token);
+        else if (isConstant(token))
+            printf(" Constant: %s\n", token);
+        else if (isOperator(token))
+            printf("  Operator: %s\n", token);
+        else
+            printf(" Not recognized: %s\n", token);
+    }
+
+    return 0;
+}
+4. Write a Program to implement DFAs that recognize identifiers, constants and operators
+
+#include <stdio.h>
+#include <ctype.h>
+#include <string.h>
+
+// DFA for identifier
+int isIdentifier(char *str) {
+    int i = 0;
+    if (!isalpha(str[i]) && str[i] != '_') return 0;
+    i++;
+    while (str[i] != '\0') {
+        if (!isalnum(str[i]) && str[i] != '_') return 0;
+        i++;
+    }
+    return 1;
+}
+
+// DFA for constant (integer and float)
+int isConstant(char *str) {
+    int i = 0, hasDot = 0;
+    if (str[i] == '-') i++;  // handle negative numbers
+
+    if (!isdigit(str[i]) && str[i] != '.') return 0;
+
+    for (; str[i] != '\0'; i++) {
+        if (str[i] == '.') {
+            if (hasDot) return 0;
+            hasDot = 1;
+        } else if (!isdigit(str[i])) {
+            return 0;
+        }
+    }
+
+    // valid if ends properly and not only '.'
+    return (i > 0 && !(hasDot && i == 1));
+}
+
+// DFA for operators: +, -, *, /, =, ==, !=, <, <=, >, >=
+int isOperator(char *str) {
+    if (strcmp(str, "+") == 0 || strcmp(str, "-") == 0 ||
+        strcmp(str, "*") == 0 || strcmp(str, "/") == 0 ||
+        strcmp(str, "=") == 0 || strcmp(str, "==") == 0 ||
+        strcmp(str, "!=") == 0 || strcmp(str, "<") == 0 ||
+        strcmp(str, "<=") == 0 || strcmp(str, ">") == 0 ||
+        strcmp(str, ">=") == 0)
+        return 1;
+    return 0;
+}
+
+int main() {
+    char token[50];
+
+    printf("Enter tokens (type 'exit' to stop):\n");
+
+    while (1) {
+        printf("> ");
+        scanf("%s", token);
+
+        if (strcmp(token, "exit") == 0)
+            break;
+
+        if (isIdentifier(token))
+            printf(" Identifier: %s\n", token);
+        else if (isConstant(token))
+            printf(" Constant: %s\n", token);
+        else if (isOperator(token))
+            printf("  Operator: %s\n", token);
+        else
+            printf(" Not recognized: %s\n", token);
+    }
+
+    return 0;
+}
+
+5. Development and Implementation of Lexical Analysis block
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+int isKeyword(char *str) {
+    return (
+        strcmp(str, "int") == 0 ||
+        strcmp(str, "float") == 0 ||
+        strcmp(str, "if") == 0 ||
+        strcmp(str, "else") == 0 ||
+        strcmp(str, "while") == 0 ||
+        strcmp(str, "return") == 0
+    );
+}
+
+int isOperatorChar(char ch) {
+    return (ch == '+' || ch == '-' || ch == '*' || ch == '/' ||
+            ch == '=' || ch == '!' || ch == '<' || ch == '>');
+}
+
+int isSeparator(char ch) {
+    return (ch == '(' || ch == ')' || ch == '{' || ch == '}' ||
+            ch == ',' || ch == ';');
+}
+
+int isOperator(char *str) {
+    return (
+        strcmp(str, "+") == 0 || strcmp(str, "-") == 0 ||
+        strcmp(str, "*") == 0 || strcmp(str, "/") == 0 ||
+        strcmp(str, "=") == 0 || strcmp(str, "==") == 0 ||
+        strcmp(str, "!=") == 0 || strcmp(str, "<") == 0 ||
+        strcmp(str, "<=") == 0 || strcmp(str, ">") == 0 ||
+        strcmp(str, ">=") == 0
+    );
+}
+
+int isConstant(char *str) {
+    int i = 0, dot = 0;
+    if (str[i] == '-') i++;
+    for (; str[i] != '\0'; i++) {
+        if (str[i] == '.') {
+            if (dot) return 0;
+            dot = 1;
+        } else if (!isdigit(str[i])) return 0;
+    }
+    return (i > 0);
+}
+
+int isIdentifier(char *str) {
+    if (!isalpha(str[0]) && str[0] != '_') return 0;
+    for (int i = 1; str[i] != '\0'; i++) {
+        if (!isalnum(str[i]) && str[i] != '_') return 0;
+    }
+    return 1;
+}
+
+void analyze(char *code) {
+    int i = 0;
+    char temp[100];
+    int k = 0;
+
+    while (code[i] != '\0') {
+        char ch = code[i];
+
+        // Skip whitespaces
+        if (ch == ' ' || ch == '\n' || ch == '\t') {
+            i++;
+            continue;
+        }
+
+        // Separators
+        if (isSeparator(ch)) {
+            printf("Separator: %c\n", ch);
+            i++;
+            continue;
+        }
+
+        // Operators
+        if (isOperatorChar(ch)) {
+            temp[0] = ch;
+            temp[1] = '\0';
+            if ((ch == '=' || ch == '!' || ch == '<' || ch == '>') && code[i+1] == '=') {
+                temp[1] = '=';
+                temp[2] = '\0';
+                i++;
+            }
+            if (isOperator(temp)) {
+                printf("Operator: %s\n", temp);
+            }
+            i++;
+            continue;
+        }
+
+        // Identifiers / Keywords / Constants
+        if (isalnum(ch) || ch == '_' || ch == '.') {
+            k = 0;
+            while (isalnum(code[i]) || code[i] == '_' || code[i] == '.') {
+                temp[k++] = code[i++];
+            }
+            temp[k] = '\0';
+
+            if (isKeyword(temp)) {
+                printf("Keyword: %s\n", temp);
+            } else if (isConstant(temp)) {
+                printf("Constant: %s\n", temp);
+            } else if (isIdentifier(temp)) {
+                printf("Identifier: %s\n", temp);
+            } else {
+                printf("Unknown Token: %s\n", temp);
+            }
+        } else {
+            printf("Unknown Character: %c\n", ch);
+            i++;
+        }
+    }
+}
+int main() {
+    char code[200];
+
+    printf("Enter source code (single line):\n");
+    fgets(code, sizeof(code), stdin);
+
+    printf("\n Lexical Analysis Output:\n");
+    analyze(code);
+
+    return 0;
+}
+7. Implement a program for predictive parsing algorithm
+code option 1:
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <ctype.h>
+
+#define MAX 100
+
+char stack[MAX];
+int top = -1;
+
+// Stack operations
+void push(char c) {
+    if (top < MAX - 1)
+        stack[++top] = c;
+}
+
+char pop() {
+    if (top >= 0)
+        return stack[top--];
+    return '\0';
+}
+
+char peek() {
+    if (top >= 0)
+        return stack[top];
+    return '\0';
+}
+
+// Predictive parsing table
+const char *table[5][6] = {
+    /* id     +       *       (       )      $   */
+    {"Te",   "",     "",     "Te",   "",     ""},   // E
+    {"",     "+Te",  "",     "",     "ε",    "ε"},  // e (E')
+    {"Ft",   "",     "",     "Ft",   "",     ""},   // T
+    {"",     "ε",    "*Ft",  "",     "ε",    "ε"},  // t (T')
+    {"i",    "",     "",     "(E)",  "",     ""}    // F
+};
+
+// Map non-terminals to row indices
+int rowIndex(char symbol) {
+    switch (symbol) {
+        case 'E': return 0;
+        case 'e': return 1; // E'
+        case 'T': return 2;
+        case 't': return 3; // T'
+        case 'F': return 4;
+    }
+    return -1;
+}
+
+// Map terminals to column indices
+int colIndex(char symbol) {
+    switch (symbol) {
+        case 'i': return 0;  // id
+        case '+': return 1;
+        case '*': return 2;
+        case '(': return 3;
+        case ')': return 4;
+        case '$': return 5;
+    }
+    return -1;
+}
+
+// Predictive parsing function
+void predictiveParse(char *input) {
+    push('$');
+    push('E'); // Start symbol
+
+    int i = 0;
+    char current = input[i];
+
+    printf("\nParsing steps:\n");
+
+    while (peek() != '$') {
+        char topSymbol = peek();
+
+        if (topSymbol == current) {
+            pop();
+            i++;
+            current = input[i];
+        } else if (topSymbol == 'i' && current == 'i') {
+            pop();
+            i++;
+            current = input[i];
+        } else if (isupper(topSymbol) || topSymbol == 'e' || topSymbol == 't') {
+            int row = rowIndex(topSymbol);
+            int col = colIndex(current);
+
+            if (row == -1 || col == -1 || table[row][col][0] == '\0') {
+                printf(" Error: no rule for [%c, %c]\n", topSymbol, current);
+                return;
+            }
+
+            printf("%c -> %s\n", topSymbol, table[row][col]);
+            pop();
+
+            if (strcmp(table[row][col], "ε") != 0) {
+                int len = strlen(table[row][col]);
+                for (int j = len - 1; j >= 0; j--) {
+                    push(table[row][col][j]);
+                }
+            }
+
+        } else {
+            printf(" Syntax Error at '%c'\n", current);
+            return;
+        }
+    }
+
+    if (current == '$')
+        printf(" String successfully parsed.\n");
+    else
+        printf(" String not accepted. Remaining input: %s\n", &input[i]);
+}
+
+int main() {
+    char input[100];
+
+    printf("Enter input string (use 'i' for id, end with '$'): ");
+    scanf("%s", input);
+
+    predictiveParse(input);
+
+    return 0;
+}
+-----------------------------------------------------------------------------------------------------------------------------------------------
+7th code option 2:
+#include <stdio.h>
+#include <string.h>
+
+char prod[2][10] = { "S->aA", "A->b" };
+char nonTerminals[2][10] = { "S", "A" };
+char terminals[3][10] = { "a", "b", "$" };
+
+char table[3][4][15]; // 3 rows (S, A + header), 4 columns (a, b, $, + header)
+
+int getRow(char nt) {
+    switch (nt) {
+        case 'S': return 1;
+        case 'A': return 2;
+    }
+    return 0;
+}
+
+int getCol(char t) {
+    switch (t) {
+        case 'a': return 1;
+        case 'b': return 2;
+        case '$': return 3;
+    }
+    return 0;
+}
+
+int main() {
+    // Initialize table with empty strings
+    for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 4; j++)
+            strcpy(table[i][j], " ");
+
+    // Fill headers
+    strcpy(table[0][0], " ");
+    strcpy(table[0][1], "a");
+    strcpy(table[0][2], "b");
+    strcpy(table[0][3], "$");
+
+    strcpy(table[1][0], "S");
+    strcpy(table[2][0], "A");
+
+    // Fill table using FIRST sets
+    strcpy(table[getRow('S')][getCol('a')], "S->aA");
+    strcpy(table[getRow('A')][getCol('b')], "A->b");
+
+    // Print the table
+    printf("Predictive Parsing Table:\n");
+    printf("-----------------------------------------\n");
+
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 4; j++) {
+            printf("%-12s", table[i][j]);
+        }
+        printf("\n-----------------------------------------\n");
+    }
+
+    return 0;
+}
+
+8. Implement a program for the design of Recursive Descent Parser
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <string.h>
+
+char input[100];
+int pos = 0;
+
+char lookahead() {
+    while (input[pos] == ' ') pos++;  // skip whitespace
+    return input[pos];
+}
+
+void match(char expected) {
+    if (lookahead() == expected) {
+        pos++;
+    } else {
+        printf("Error: Expected '%c', but found '%c'\n", expected, lookahead());
+        exit(1);
+    }
+}
+
+void E(), EPrime(), T(), TPrime(), F();
+
+void E() {
+    T();
+    EPrime();
+}
+
+void EPrime() {
+    if (lookahead() == '+') {
+        match('+');
+        T();
+        EPrime();
+    }
+    // else: epsilon (do nothing)
+}
+
+void T() {
+    F();
+    TPrime();
+}
+
+void TPrime() {
+    if (lookahead() == '*') {
+        match('*');
+        F();
+        TPrime();
+    }
+    // else: epsilon (do nothing)
+}
+
+void F() {
+    if (lookahead() == '(') {
+        match('(');
+        E();
+        match(')');
+    } else if (isalpha(lookahead())) {
+        match(lookahead());  // accept single-letter id
+    } else {
+        printf("Error: Unexpected symbol '%c' in F\n", lookahead());
+        exit(1);
+    }
+}
+
+int main() {
+    printf("Enter an expression: ");
+    fgets(input, sizeof(input), stdin);
+
+    E();
+
+    if (lookahead() == '\n' || lookahead() == '\0') {
+        printf("Parsing successful.\n");
+    } else {
+        printf("Error: Unexpected input remaining: '%c'\n", lookahead());
+    }
+
+    return 0;
+}
+12. Implementation for generating three address codes.
+OPT1:
+
+#include<stdio.h>
+#include<stdlib.h>
+#include<ctype.h>
+#include<string.h>
+
+int tempCount = 1;
+
+void generate(char * input){
+    char lhs[10],rhs[50],temp[50];
+    sscanf(input, "%[^=]=%s", lhs, rhs);
+    char token[50][10];
+    int n =0;
+    for(int i =0; rhs[i]!='\0';i++){
+        char t[2]={rhs[i],'\0'};
+        strcpy(token[n++],t);
+    }
+    for(int i =0 ;i <n ;i++){
+        if(!(strcmp(token[i],"*"))|| !(strcmp(token[i],"/"))){
+            sprintf(temp, "t%d",tempCount++);
+            printf("%s = %s %s %s",temp, token[i-1],token[i],token[i+1]);
+            strcpy(token[i-1],temp);
+            for(int j= i+2;j<n;j++){
+                strcpy(token[j+2],token[j]);
+            }
+            n-=2;
+            i-=1 ;   
+        }
+    }
+    for(int i =0 ;i <n ;i++){
+        if(!(strcmp(token[i],"+"))|| !(strcmp(token[i],"-"))){
+            sprintf(temp, "t%d",tempCount++);
+            printf("%s = %s %s %s",temp, token[i-1],token[i],token[i+1]);
+            strcpy(token[i-1],temp);
+            for(int j= i+2;j<n;j++){
+                strcpy(token[j+2],token[j]);
+            }
+            n-=2;
+            i-=1 ;   
+        }
+    }
+    printf("%s = %s",lhs,token[0]);
+}
+
+void main(){
+    char expr[100];
+    int choice = 0;
+    printf("Enter a choice 1. Expression 2. Array\n");
+    scanf(" %d",&choice);
+    if(choice == 1){
+        printf("Enter expression (e.g., a=b+c*d): ");
+        scanf("%s", expr);
+        generate(expr);
+    }
+    else if(choice==2){
+        int type;
+        printf("1. Read (x = y[i])\n2. Write (x[i] = y)\nChoose type: ");
+        scanf("%d", &type);
+        char x[10], y[10], i[10];
+        if (type == 1) {
+            printf("Enter x (target): "); s canf("%s", x);
+            printf("Enter y (array): "); scanf("%s", y);
+            printf("Enter i (index): "); scanf("%s", i);
+            printf("%s = %s[%s]\n", x, y, i);
+        } else {
+            printf("Enter x (array): "); scanf("%s", x);
+            printf("Enter i (index): "); scanf("%s", i);
+            printf("Enter y (value): "); scanf("%s", y);
+            printf("%s[%s] = %s\n", x, i, y);
+        }
+    }
+    
+}
+OPT2:
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+
+char expr[100];
+int pos = 0;
+int tempCount = 1;
+char tempVar[10];
+
+char* newTemp() {
+    sprintf(tempVar, "t%d", tempCount++);
+    return strdup(tempVar);
+}
+
+void error() {
+    printf("Syntax Error at position %d\n", pos);
+    exit(1);
+}
+
+char* F();       // Factor
+char* T();       // Term
+char* E();       // Expression
+
+char peek() { return expr[pos]; }
+void consume() { pos++; }
+void match(char c) { if (peek() == c) consume(); else error(); }
+
+char* F() {
+    char *res;
+    if (peek() == '(') {
+        match('(');
+        res = E();
+        match(')');
+    } else if (isalpha(peek())) {
+        char id[2] = {peek(), '\0'};
+        consume();
+        res = strdup(id);
+    } else {
+        error();
+    }
+    return res;
+}
+
+char* T() {
+    char *left = F();
+    while (peek() == '*' || peek() == '/') {
+        char op = peek();
+        consume();
+        char *right = F();
+        char *tmp = newTemp();
+        printf("%s = %s %c %s\n", tmp, left, op, right);
+        left = strdup(tmp);
+    }
+    return left;
+}
+
+char* E() {
+    char *left = T();
+    while (peek() == '+' || peek() == '-') {
+        char op = peek();
+        consume();
+        char *right = T();
+        char *tmp = newTemp();
+        printf("%s = %s %c %s\n", tmp, left, op, right);
+        left = strdup(tmp);
+    }
+    return left;
+}
+
+void handleExpression() {
+    printf("Enter expression (e.g., a=b+c*d): ");
+    scanf("%s", expr);
+
+    if (isalpha(expr[0]) && expr[1] == '=') {
+        char lhs = expr[0];
+        pos = 2;
+        char *res = E();
+        printf("%c = %s\n", lhs, res);
+    } else {
+        char *res = E();
+        printf("Result in: %s\n", res);
+    }
+}
+
+void handleArrayAccess() {
+    int type;
+    printf("1. Read (x = y[i])\n2. Write (x[i] = y)\nChoose type: ");
+    scanf("%d", &type);
+    char x[10], y[10], i[10];
+    if (type == 1) {
+        printf("Enter x (target): "); scanf("%s", x);
+        printf("Enter y (array): "); scanf("%s", y);
+        printf("Enter i (index): "); scanf("%s", i);
+        printf("%s = %s[%s]\n", x, y, i);
+    } else {
+        printf("Enter x (array): "); scanf("%s", x);
+        printf("Enter i (index): "); scanf("%s", i);
+        printf("Enter y (valu
